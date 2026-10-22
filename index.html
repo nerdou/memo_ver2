@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>할 일 메모</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --card:#ffffff; --ink:#23211d; --sub:#7b756b; --line:#e5e0d5;
+  --accent:#3d6b5a; --accent-soft:#e2eee8;
+  --red:#e5484d; --red-soft:#fde9e9;
+  --yellow:#d99a0b; --yellow-soft:#fdf3d6;
+  --blue:#3b82c4; --blue-soft:#e4eef9;
+  --purple:#8a5cc7; --purple-soft:#f1e9fb;
+  --shadow:0 6px 20px rgba(40,30,10,.08);
+  --hl-red:#ffc4c4; --hl-yellow:#ffe27a; --hl-blue:#c4dcf7; --hl-purple:#e0cdf7;
+}
+:root{color-scheme:light}
+/* 어두운 테마: 설정에서 '어둡게'를 골랐을 때 */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#1b1a18; --card:#262421; --ink:#f1ede6; --sub:#a39d92; --line:#3a3732;
+  --accent:#6fae94; --accent-soft:#2a3a33;
+  --red:#ff6b6f; --red-soft:#3d2627;
+  --yellow:#f2b83a; --yellow-soft:#3b3220;
+  --blue:#6aa8e6; --blue-soft:#22303f;
+  --purple:#b48ae8; --purple-soft:#33283f;
+  --shadow:0 6px 20px rgba(0,0,0,.35);
+  --hl-red:rgba(255,107,111,.4); --hl-yellow:rgba(242,184,58,.4); --hl-blue:rgba(106,168,230,.4); --hl-purple:rgba(180,138,232,.4);
+}
+/* '컴퓨터 설정 따라가기'일 때만 시스템 다크 모드를 따름 */
+@media (prefers-color-scheme: dark){
+  :root[data-theme="auto"]{
+    color-scheme:dark;
+    --bg:#1b1a18; --card:#262421; --ink:#f1ede6; --sub:#a39d92; --line:#3a3732;
+    --accent:#6fae94; --accent-soft:#2a3a33;
+    --red:#ff6b6f; --red-soft:#3d2627;
+    --yellow:#f2b83a; --yellow-soft:#3b3220;
+    --blue:#6aa8e6; --blue-soft:#22303f;
+    --purple:#b48ae8; --purple-soft:#33283f;
+    --shadow:0 6px 20px rgba(0,0,0,.35);
+    --hl-red:rgba(255,107,111,.4); --hl-yellow:rgba(242,184,58,.4); --hl-blue:rgba(106,168,230,.4); --hl-purple:rgba(180,138,232,.4);
+  }
+}
+.theme-opts{display:flex;gap:8px;flex-wrap:wrap}
+.theme-opt{flex:1;min-width:96px;border:2px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 8px;
+  cursor:pointer;font-size:.88rem;text-align:center}
+.theme-opt .sw-prev{display:block;height:26px;border-radius:7px;margin-bottom:6px;border:1px solid rgba(127,127,127,.3)}
+.theme-opt.sel{border-color:var(--accent);font-weight:700}
+.set-sec{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.set-label{font-size:.9rem;font-weight:800;margin:0 0 8px}
+.cloud-badge{margin-left:2px}
+.cloud-err{color:var(--red);font-size:.82rem;margin:8px 2px 0}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Noto Sans KR',system-ui,-apple-system,'Malgun Gothic',sans-serif;}
+button,input,select{font:inherit;color:inherit}
+#app{max-width:760px;margin:0 auto;padding:16px 16px 56px;}
+
+/* 헤더 */
+.hdr{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding-bottom:12px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{width:32px;height:32px;border-radius:50%;object-fit:cover;flex:none;display:block;
+  border:2px solid var(--card);box-shadow:0 0 0 1px var(--line), 0 2px 6px rgba(0,0,0,.08)}
+.brand-name{margin:0;font-weight:900;font-size:1.15rem;letter-spacing:-.03em;white-space:nowrap;line-height:1.15}
+.brand-sub{display:block;font-weight:500;font-size:.78rem;color:var(--sub);letter-spacing:0;margin-top:3px;white-space:nowrap}
+.hdr .btn{background:transparent}
+/* 메인(목록) 화면에서는 앱 제목을 크게 */
+.hdr.home{padding:14px 0 18px;align-items:flex-end}
+.hdr.home .brand{gap:14px}
+.hdr.home .brand-mark{width:58px;height:58px;border-width:3px}
+.hdr.home .brand-name{font-size:clamp(1.7rem,6vw,2.2rem)}
+.btn{border:1px solid var(--line);background:var(--card);padding:7px 12px;border-radius:10px;
+  cursor:pointer;font-size:.88rem;white-space:nowrap;transition:background .15s}
+.btn:hover{background:var(--accent-soft)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.pinned{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-text{background:none;border:none;cursor:pointer;color:var(--sub);font-size:.9rem;padding:6px 4px}
+.btn-text:hover{color:var(--ink)}
+.btn-text.danger:hover,.btn-text.warn{color:var(--red)}
+
+/* 카테고리 칩 */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 13px;
+  cursor:pointer;font-size:.9rem;display:inline-flex;align-items:center;gap:6px}
+.chip .cnt{font-size:.75rem;color:var(--sub)}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.on .cnt{color:var(--bg);opacity:.7}
+.chip.ghost{background:transparent}
+
+/* 패널(카테고리 관리, 새 메모) */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.panel h3{margin:0 0 10px;font-size:1rem}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.field{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 12px;outline:none;min-width:0}
+.field:focus{border-color:var(--accent)}
+.field.grow{flex:1}
+.field.emoji{width:56px;text-align:center}
+.cat-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.cat-row:last-of-type{border-bottom:none}
+.cat-row span{flex:1}
+
+/* 메모 목록 */
+.add-memo{width:100%;padding:14px;border:2px dashed var(--line);border-radius:14px;background:transparent;
+  color:var(--sub);font-weight:700;cursor:pointer;font-size:.98rem}
+.add-memo:hover{border-color:var(--accent);color:var(--accent)}
+.memo-list{display:grid;gap:10px;margin-top:12px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.memo-card{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;
+  cursor:pointer;transition:transform .15s, box-shadow .15s;display:flex;flex-direction:column;gap:6px}
+.memo-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.mc-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.tag{font-size:.75rem;background:var(--accent-soft);color:var(--accent);padding:3px 9px;border-radius:999px;font-weight:700}
+.imp{font-size:.75rem;color:var(--red);font-weight:700}
+.mc-title{font-weight:800;font-size:1.12rem;line-height:1.35;word-break:break-word}
+.mc-preview{font-size:.85rem;color:var(--sub);line-height:1.5;min-height:1.2em}
+.mc-preview div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-meta{font-size:.75rem;color:var(--sub)}
+.memo-card.complete{opacity:.65}
+.memo-card.complete .mc-title{text-decoration:line-through}
+.bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.empty{grid-column:1/-1;text-align:center;color:var(--sub);padding:40px 10px;line-height:1.7}
+.foot{margin-top:28px;text-align:center;font-size:.82rem;color:var(--sub)}
+.foot .btn-text{font-size:.82rem}
+
+/* 메모 상세 */
+.d-bar{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.d-bar .spacer{flex:1}
+.cat-select{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 10px;font-size:.85rem;cursor:pointer}
+.d-title{font-size:clamp(1.8rem,7vw,2.7rem);font-weight:900;line-height:1.2;letter-spacing:-.03em;
+  margin:18px 0 12px;padding-bottom:12px;border-bottom:4px solid var(--accent);cursor:text;word-break:break-word}
+.d-title:hover{color:var(--accent)}
+.title-input{width:100%;font-size:clamp(1.8rem,7vw,2.7rem);font-weight:900;letter-spacing:-.03em;
+  margin:18px 0 12px;padding:0 0 12px;border:none;border-bottom:4px dashed var(--accent);background:transparent;outline:none}
+.d-progress{display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--sub)}
+.d-progress .bar{flex:1;height:8px}
+
+/* 메모 안 묶음 + 할 일 목록 (깔끔한 체크리스트형) */
+.groups{margin:22px 0 8px}
+.group{margin-bottom:22px}
+.g-head{display:flex;align-items:center;gap:8px;padding:2px 2px 7px;border-bottom:2px solid var(--ink)}
+.g-name{font-weight:800;font-size:1.02rem}
+.g-count{font-size:.78rem;color:var(--sub)}
+.g-head .spacer{flex:1}
+.g-head .icon{opacity:.25}
+.g-head:hover .icon{opacity:1}
+.g-input{flex:1;min-width:0;font-weight:800;font-size:1.02rem;border:none;border-bottom:2px dashed var(--accent);
+  background:transparent;outline:none;padding:0}
+.items{list-style:none;padding:0;margin:0}
+.item{display:flex;align-items:center;gap:12px;padding:9px 6px;border-bottom:1px solid var(--line);position:relative;border-radius:6px}
+.item:hover{background:rgba(127,127,127,.07)}
+.check{width:20px;height:20px;border-radius:50%;border:2px solid var(--sub);background:transparent;flex:none;
+  cursor:pointer;color:#fff;font-weight:900;font-size:.68rem;display:grid;place-items:center;padding:0}
+.check:hover{border-color:var(--accent)}
+.item.done .check{background:var(--accent);border-color:var(--accent)}
+.txt{flex:1;cursor:pointer;line-height:1.55;word-break:break-word;user-select:none}
+.txt .em{margin-right:5px}
+.txt .hl{padding:0 2px;border-radius:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.item[class*="c-"] .hl{font-weight:700}
+.item.c-red .hl{background:linear-gradient(transparent 45%, var(--hl-red) 45%)}
+.item.c-yellow .hl{background:linear-gradient(transparent 45%, var(--hl-yellow) 45%)}
+.item.c-blue .hl{background:linear-gradient(transparent 45%, var(--hl-blue) 45%)}
+.item.c-purple .hl{background:linear-gradient(transparent 45%, var(--hl-purple) 45%)}
+.item.done .txt{color:var(--sub)}
+.item.done .hl{text-decoration:line-through;text-decoration-thickness:2px;opacity:.7}
+.edit-item{flex:1;border:none;border-bottom:1px solid var(--accent);padding:2px 0;background:transparent;outline:none;min-width:0}
+.add-row{display:flex;align-items:center;gap:12px;padding:9px 6px;color:var(--sub);cursor:pointer;border-radius:6px;
+  font-size:.92rem;background:none;border:none;width:100%;text-align:left}
+.add-row:hover{color:var(--accent);background:rgba(127,127,127,.07)}
+.add-row .plus{width:20px;text-align:center;font-weight:700;flex:none}
+.add-live{display:flex;align-items:center;gap:12px;padding:7px 6px;border-bottom:1px solid var(--accent)}
+.add-live .check{border-style:dashed;cursor:default}
+.add-live input{flex:1;min-width:0;border:none;background:transparent;outline:none;padding:3px 0}
+.add-group{display:block;margin:4px 0 0;padding:8px 14px;border:1px dashed var(--line);border-radius:10px;background:none;
+  color:var(--sub);cursor:pointer;font-size:.88rem}
+.add-group:hover{border-color:var(--accent);color:var(--accent)}
+.mark-menu .mv{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:3px 10px;font-size:.8rem;cursor:pointer}
+.mark-menu .mv.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* 고정 보드 */
+.pin-btn{background:none;border:none;cursor:pointer;opacity:.25;font-size:.9rem;padding:2px 4px;border-radius:6px}
+.pin-btn:hover{opacity:.7;background:rgba(127,127,127,.12)}
+.pin-btn.on{opacity:1}
+.btn-text.on{color:var(--accent);font-weight:700}
+.board-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 10px;font-size:.85rem;color:var(--sub)}
+.board-head select{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 8px;font-size:.8rem;max-width:55%}
+.pin-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.pin-title{display:flex;align-items:center;gap:4px}
+.pin-title h2{flex:1;margin:0;font-size:1.22rem;font-weight:900;letter-spacing:-.02em;cursor:pointer;word-break:break-word;line-height:1.3}
+.pin-card .bar{margin:6px 0 2px;height:4px}
+.pin-card .item{padding:6px 2px}
+.pin-card .item:last-child{border-bottom:none}
+.pin-group{font-size:.78rem;font-weight:800;color:var(--sub);margin:10px 0 0;padding-bottom:3px;border-bottom:1px solid var(--line)}
+.pin-card .icon{opacity:.45}
+
+/* 사용법 안내 */
+.help{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-top:14px;box-shadow:var(--shadow)}
+.help h3{margin:0 0 10px;font-size:1.05rem;display:flex;justify-content:space-between;align-items:center}
+.help ul{margin:0;padding-left:1.1em;line-height:1.85;font-size:.9rem}
+.help b{color:var(--accent)}
+.icon{opacity:.3;background:none;border:none;cursor:pointer;font-size:.95rem;padding:4px;border-radius:6px;flex:none}
+.item:hover .icon,.icon.active{opacity:1}
+.icon:hover{background:rgba(127,127,127,.15)}
+@media (hover:none){.icon{opacity:.75}}
+
+.mark-menu{position:absolute;right:6px;top:calc(100% + 4px);z-index:10;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;box-shadow:var(--shadow);padding:10px;width:228px}
+.mark-menu p{margin:0 0 6px;font-size:.75rem;color:var(--sub)}
+.mark-menu .row{gap:6px;margin-bottom:8px}
+.sw{width:30px;height:30px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0}
+.sw.sel{border-color:var(--ink)}
+.sw.red{background:var(--red)} .sw.yellow{background:var(--yellow)} .sw.blue{background:var(--blue)} .sw.purple{background:var(--purple)}
+.emo{width:32px;height:32px;border:2px solid transparent;border-radius:8px;background:var(--bg);cursor:pointer;font-size:1.05rem;padding:0}
+.emo.sel{border-color:var(--ink)}
+
+.hint{font-size:.78rem;color:var(--sub);margin:8px 2px 0}
+
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:10px;font-size:.88rem;opacity:0;pointer-events:none;transition:.25s;max-width:90vw;text-align:center;line-height:1.5}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+#pinned-msg{display:none;text-align:center;padding:80px 20px;color:var(--sub);line-height:1.8}
+#pinned-msg.show{display:block}
+#pinned-msg b{color:var(--ink);font-size:1.2rem}
+
+/* 고정 창(좁은 화면)용 압축 레이아웃 */
+@media (max-width:460px){
+  #app{padding:10px 10px 40px}
+  .brand-sub{display:none}
+  .hdr.home .brand-sub{display:block}
+  .hdr.home{flex-wrap:wrap}
+  .memo-list{grid-template-columns:1fr}
+  .memo-card{padding:11px 12px}
+  .mc-preview{display:none}
+  .d-title{margin:12px 0 8px}
+  .hdr .btn{padding:6px 9px;font-size:.8rem}
+}
+</style>
+</head>
+<body>
+<div id="host">
+  <div id="app">
+    <header class="hdr" id="hdr"></header>
+    <main id="view"></main>
+    <div id="toast"></div>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+  </div>
+</div>
+<div id="pinned-msg">
+  <b>📌 메모가 고정 창에서 열려 있어요</b><br>
+  고정 창을 닫으면 여기로 돌아옵니다.<br><br>
+  <button class="btn" id="unpinBtn">이 창으로 되돌리기</button>
+</div>
+
+<script>
+(function(){
+const KEY = 'hy-todo-memo-v1';
+const DIRTY = KEY+'-dirty';          // 클라우드에 아직 안 올라간 변경이 있는지
+const CLOUD_KEY = KEY+'-cloudkey';   // 이 기기에 기억한 비밀 키
+const CLOUD_INIT = KEY+'-cloudinit'; // 이 기기가 처음 연결했는지
+
+/* Firebase 설정 (웹에 공개되는 값이라 파일에 넣어도 괜찮아요. 보안은 Firestore 규칙의 비밀 키가 담당) */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAY2QjMJV5UFZ4bFfa7vZluOABsAlnL190",
+  authDomain: "memo-ver1.firebaseapp.com",
+  projectId: "memo-ver1",
+  storageBucket: "memo-ver1.firebasestorage.app",
+  messagingSenderId: "244173866865",
+  appId: "1:244173866865:web:cfcbf5f30f4f00e84f58d0"
+};
+const FB_VER = '10.12.2';
+
+/* ★ 여기에 Firestore 규칙에 적은 비밀 키를 따옴표 안에 넣으세요.
+   넣어 두면 어떤 기기·브라우저에서 열어도 자동으로 연결돼요. (비워 두면 ⚙️ 설정에서 직접 입력) */
+const CLOUD_SECRET = '7297';
+const AVATAR = 'data:image/jpeg;base64,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'; // 제목 옆 프로필 사진
+const COLORS = ['red','yellow','blue','purple'];
+const COLOR_NAMES = {red:'빨강',yellow:'노랑',blue:'파랑',purple:'보라'};
+const EMOJIS = ['⭐','🔥','❗','📌','⏰','💡','✅','💬'];
+
+const app = document.getElementById('app');
+const hdr = document.getElementById('hdr');
+const viewEl = document.getElementById('view');
+const toastEl = document.getElementById('toast');
+const importFile = document.getElementById('importFile');
+
+const uid = () => Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function defaultState(){
+  const c1={id:uid(),name:'업무',emoji:'💼'}, c2={id:uid(),name:'수업',emoji:'📚'}, c3={id:uid(),name:'개인',emoji:'🏠'};
+  return { categories:[c1,c2,c3], memos:[], theme:'light' };
+}
+function normalize(s){
+  if(!s || !Array.isArray(s.memos) || !Array.isArray(s.categories)) return null;
+  s.memos = s.memos.filter(m=>m && m.title!=='사용법 안내 👋'); // 이전 버전의 예시 메모 정리
+  s.memos.forEach(m=>{ if(!Array.isArray(m.groups)) m.groups=[]; if(!Array.isArray(m.items)) m.items=[]; });
+  if(!['light','dark','auto'].includes(s.theme)) s.theme='light';
+  return s;
+}
+function load(){
+  try{ const s=normalize(JSON.parse(localStorage.getItem(KEY))); if(s) return s; }catch(e){}
+  return defaultState();
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); localStorage.setItem(DIRTY,'1'); }
+  catch(e){ toast('저장 공간을 쓸 수 없어요. 백업 내보내기를 이용해 주세요.'); }
+  schedulePush();
+}
+
+let state = load();
+let view = {name:'home', cat:'all', memoId:null};
+let ui = {addingMemo:false, editingCats:false, markMenu:null, editItem:null, editTitle:false, confirmDel:null,
+          help:false, addTo:null, editGroup:null};
+const NONE = '_none'; // 묶음 없는 할 일
+let pipWin = null;
+let prevView = null;
+const collapsed = {};
+let focusSel = null;
+
+const catOf = id => state.categories.find(c=>c.id===id);
+const memoOf = id => state.memos.find(m=>m.id===id);
+const curMemo = () => memoOf(view.memoId);
+const isComplete = m => m.items.length>0 && m.items.every(i=>i.done);
+const touch = m => { m.updated = Date.now(); };
+
+function fmtDate(t){
+  const d=new Date(t), now=new Date();
+  if(d.toDateString()===now.toDateString()) return '오늘 '+d.toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});
+  return (d.getMonth()+1)+'월 '+d.getDate()+'일';
+}
+
+/* ---------- 렌더링 ---------- */
+function applyTheme(){
+  const th = ['light','dark','auto'].includes(state.theme) ? state.theme : 'light';
+  [document, pipWin && pipWin.document].forEach(d=>{ if(d) d.documentElement.dataset.theme = th; });
+}
+let laterTimer = null, rendering = false;
+/* 클릭이 끝난 뒤에 화면을 다시 그리기 (입력칸이 닫히면서 클릭을 삼키지 않도록) */
+function renderLater(){ clearTimeout(laterTimer); laterTimer = setTimeout(render, 120); }
+function render(){
+  clearTimeout(laterTimer);
+  applyTheme();
+  // 지금 입력 중인 칸이 있으면 다시 그린 뒤에도 커서·입력 내용을 그대로 유지
+  let keep = null;
+  if(!focusSel){
+    const ae = app.ownerDocument.activeElement;
+    if(ae && ae.id && app.contains(ae) && ae.tagName==='INPUT'){
+      keep = {id:ae.id, value:ae.value, s:ae.selectionStart, e:ae.selectionEnd};
+    }
+  }
+  const isHome = view.name==='home';
+  hdr.className = 'hdr' + (isHome ? ' home' : '');
+  const left = state.memos.reduce((n,m)=>n+m.items.filter(i=>!i.done).length, 0);
+  const today = new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'});
+  hdr.innerHTML = `
+    <div class="brand">
+      <img class="brand-mark" src="${AVATAR}" alt="프로필">
+      <div>
+        <h1 class="brand-name">할 일 메모</h1>
+        ${isHome ? `<span class="brand-sub">${today} · 남은 할 일 ${left}개 <span class="cloud-badge" data-cloud-badge>${cloudLabel(true)}</span></span>` : ''}
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn ${ui.help?'pinned':''}" data-a="help" title="사용법 안내">❓ 사용법</button>
+      <button class="btn ${ui.settings?'pinned':''}" data-a="settings" title="설정">⚙️ 설정</button>
+      <button class="btn ${pipWin?'pinned':''}" data-a="pin" title="다른 창 위에 항상 떠 있는 작은 창으로 열기">
+        ${pipWin?'📌 고정 해제':'📌 화면 고정'}</button>
+    </div>`;
+  rendering = true; // 다시 그리는 동안 입력칸이 사라지는 건 '다른 곳 클릭'으로 보지 않음
+  try{
+    viewEl.innerHTML = (ui.settings?renderSettings():'') + (ui.help?renderHelp():'') +
+      (view.name==='board' ? renderBoard() : view.name==='detail' ? renderDetail() : renderHome());
+  } finally { rendering = false; }
+  if(focusSel){
+    const el = app.querySelector(focusSel);
+    if(el){ el.focus(); if(el.select && focusSel!=='#newItem') el.select(); }
+    focusSel = null;
+  } else if(keep){
+    const el = app.querySelector('#'+CSS.escape(keep.id));
+    if(el){ if(el.type!=='password') el.value = keep.value; el.focus(); try{ el.setSelectionRange(keep.s, keep.e); }catch(_){} }
+  }
+}
+
+function renderHome(){
+  let memos = state.memos.filter(m => view.cat==='all' || m.catId===view.cat || (view.cat==='none' && !catOf(m.catId)));
+  memos.sort((a,b)=>{ const da=isComplete(a), db=isComplete(b); if(da!==db) return da-db; return b.updated-a.updated; });
+  const uncategorized = state.memos.filter(m=>!catOf(m.catId)).length;
+  return `
+    <div class="chips">
+      <button class="chip ${view.cat==='all'?'on':''}" data-a="cat" data-id="all">전체 <span class="cnt">${state.memos.length}</span></button>
+      ${state.categories.map(c=>`<button class="chip ${view.cat===c.id?'on':''}" data-a="cat" data-id="${c.id}">${esc(c.emoji)} ${esc(c.name)} <span class="cnt">${state.memos.filter(m=>m.catId===c.id).length}</span></button>`).join('')}
+      ${uncategorized?`<button class="chip ${view.cat==='none'?'on':''}" data-a="cat" data-id="none">미분류 <span class="cnt">${uncategorized}</span></button>`:''}
+      <button class="chip ghost" data-a="manageCats" title="카테고리 추가·삭제">⚙️ 카테고리</button>
+    </div>
+    ${ui.editingCats?renderCatManager():''}
+    ${ui.addingMemo?renderNewMemo():`<button class="add-memo" data-a="openNewMemo">＋ 새 메모 만들기</button>`}
+    <div class="memo-list">
+      ${memos.length ? memos.map(memoCard).join('') : `<div class="empty">아직 메모가 없어요.<br>‘새 메모 만들기’를 눌러 시작해 보세요 ✍️</div>`}
+    </div>
+    <div class="foot">
+      데이터는 이 브라우저에 자동 저장돼요 ·
+      <button class="btn-text" data-a="export">⬇ 백업 내보내기</button> ·
+      <button class="btn-text" data-a="import">⬆ 백업 불러오기</button>
+    </div>`;
+}
+
+function memoCard(m){
+  const c = catOf(m.catId);
+  const total=m.items.length, done=m.items.filter(i=>i.done).length;
+  const imp = m.items.filter(i=>!i.done && (i.color||i.emoji)).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const preview = m.items.filter(i=>!i.done).slice(0,2).map(i=>`<div>${i.emoji?esc(i.emoji)+' ':'· '}${esc(i.text)}</div>`).join('');
+  return `
+    <div class="memo-card ${isComplete(m)?'complete':''}" data-a="open" data-id="${m.id}" role="button" tabindex="0">
+      <div class="mc-top">
+        <span class="tag">${c?esc(c.emoji+' '+c.name):'미분류'}</span>
+        <span class="row" style="gap:4px">${imp?`<span class="imp">🔥 중요 ${imp}</span>`:''}
+          <button class="pin-btn ${m.pinned?'on':''}" data-a="pinMemo" data-id="${m.id}" title="${m.pinned?'고정 보드에서 빼기':'고정 보드에 추가'}">📌</button></span>
+      </div>
+      <div class="mc-title">${esc(m.title)}</div>
+      <div class="mc-preview">${preview || (total?'모두 완료했어요 🎉':'')}</div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="mc-meta">${total?`${done}/${total} 완료`:'항목 없음'} · ${fmtDate(m.updated)}</div>
+    </div>`;
+}
+
+function renderCatManager(){
+  return `
+    <div class="panel">
+      <h3>카테고리 관리</h3>
+      ${state.categories.map(c=>`
+        <div class="cat-row"><span>${esc(c.emoji)} ${esc(c.name)}</span>
+          <button class="btn-text ${ui.confirmDel===c.id?'warn':'danger'}" data-a="delCat" data-id="${c.id}">
+            ${ui.confirmDel===c.id?'한 번 더 누르면 삭제':'삭제'}</button></div>`).join('')}
+      <div class="row" style="margin-top:10px">
+        <input class="field emoji" id="newCatEmoji" placeholder="🙂" maxlength="4">
+        <input class="field grow" id="newCatName" placeholder="새 카테고리 이름 (예: 담임업무)">
+        <button class="btn primary" data-a="addCat">추가</button>
+        <button class="btn" data-a="manageCats">닫기</button>
+      </div>
+      <p class="hint">카테고리를 지워도 메모는 ‘미분류’로 남아요.</p>
+    </div>`;
+}
+
+function renderNewMemo(){
+  const def = (view.cat!=='all' && view.cat!=='none') ? view.cat : (state.categories[0]?.id || '');
+  return `
+    <div class="panel">
+      <h3>새 메모</h3>
+      <div class="row">
+        <input class="field grow" id="newMemoTitle" placeholder="제목 (예: 이번 주 꼭 할 일)">
+        <select class="field" id="newMemoCat">
+          ${state.categories.map(c=>`<option value="${c.id}" ${c.id===def?'selected':''}>${esc(c.emoji)} ${esc(c.name)}</option>`).join('')}
+          <option value="" ${def===''?'selected':''}>미분류</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:10px;justify-content:flex-end">
+        <button class="btn" data-a="cancelNewMemo">취소</button>
+        <button class="btn primary" data-a="createMemo">만들기</button>
+      </div>
+    </div>`;
+}
+
+function renderDetail(){
+  const m = curMemo();
+  if(!m){ view.name='home'; return renderHome(); }
+  const total=m.items.length, done=m.items.filter(i=>i.done).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  return `
+    <div class="d-bar">
+      <button class="btn-text" data-a="back">${pipWin?'← 고정 보드':'← 목록'}</button>
+      <select class="cat-select" id="memoCat" aria-label="카테고리">
+        ${state.categories.map(c=>`<option value="${c.id}" ${c.id===m.catId?'selected':''}>${esc(c.emoji)} ${esc(c.name)}</option>`).join('')}
+        <option value="" ${catOf(m.catId)?'':'selected'}>미분류</option>
+      </select>
+      <span class="spacer"></span>
+      <button class="btn-text ${m.pinned?'on':''}" data-a="pinMemo" data-id="${m.id}">${m.pinned?'📌 고정됨':'📌 고정 보드에 추가'}</button>
+      <button class="btn-text ${ui.confirmDel===m.id?'warn':'danger'}" data-a="delMemo">
+        ${ui.confirmDel===m.id?'한 번 더 누르면 삭제':'🗑 메모 삭제'}</button>
+    </div>
+    ${ui.editTitle
+      ? `<input class="title-input" id="titleEdit" value="${esc(m.title)}" aria-label="제목">`
+      : `<h1 class="d-title" data-a="editTitle" title="눌러서 제목 수정">${esc(m.title)}</h1>`}
+    <div class="d-progress"><div class="bar"><i style="width:${pct}%"></i></div><span>${total?`${done}/${total} 완료`:'항목을 추가해 보세요'}</span></div>
+    <div class="groups">
+      ${renderLoose(m)}
+      ${m.groups.map(g=>renderGroup(m,g)).join('')}
+      <button class="add-group" data-a="addGroup">＋ 묶음 추가</button>
+    </div>
+    ${done?`<button class="btn-text" data-a="clearDone" style="margin-top:6px">✓ 완료한 항목 모두 지우기</button>`:''}`;
+}
+
+/* 묶음 없는 할 일: 묶음이 없거나, 묶음 밖 할 일이 있을 때만 보임 */
+function renderLoose(m){
+  const items = m.items.filter(i=>!i.secId || !m.groups.some(g=>g.id===i.secId));
+  if(m.groups.length && !items.length && ui.addTo!==NONE) return '';
+  return `<div class="group"><ul class="items">${items.map(itemRow).join('')}</ul>${addRow(NONE)}</div>`;
+}
+function renderGroup(m,g){
+  const items = m.items.filter(i=>i.secId===g.id);
+  const done = items.filter(i=>i.done).length;
+  const head = ui.editGroup===g.id
+    ? `<input class="g-input" id="g-edit-${g.id}" data-id="${g.id}" value="${esc(g.name)}" placeholder="묶음 이름">`
+    : `<span class="g-name">${esc(g.name)}</span><span class="g-count">${items.length?`${done}/${items.length}`:''}</span>
+       <span class="spacer"></span>
+       <button class="icon" data-a="editGroup" data-id="${g.id}" title="이름 바꾸기">✏️</button>
+       <button class="icon" data-a="delGroup" data-id="${g.id}" title="묶음 삭제 (할 일은 남아요)">${ui.confirmDel===g.id?'❗':'✕'}</button>`;
+  return `<div class="group"><div class="g-head">${head}</div>
+    <ul class="items">${items.map(itemRow).join('')}</ul>${addRow(g.id)}</div>`;
+}
+function addRow(secId){
+  if(ui.addTo===secId) return `
+    <div class="add-live"><span class="check"></span>
+      <input id="newItem" placeholder="할 일을 적고 Enter ↵  (맨 앞에 ! = 중요)" autocomplete="off"></div>`;
+  return `<button class="add-row" data-a="openAdd" data-id="${secId}"><span class="plus">＋</span>할 일 추가</button>`;
+}
+
+/* 고정 창 안에서 보이는 보드: 고정한 메모들만 모아서 */
+function renderBoard(){
+  const pins = state.memos.filter(m=>m.pinned).sort((a,b)=>(a.pinnedAt||0)-(b.pinnedAt||0));
+  const others = state.memos.filter(m=>!m.pinned);
+  return `
+    <div class="board-head">
+      <span>📌 고정한 메모 ${pins.length}개</span>
+      ${others.length?`<select id="pinAdd"><option value="">＋ 메모 추가</option>
+        ${others.map(m=>`<option value="${m.id}">${esc(m.title)}</option>`).join('')}</select>`:''}
+    </div>
+    ${pins.length ? pins.map(pinCard).join('') : `<div class="empty">고정한 메모가 없어요.<br>위의 ‘＋ 메모 추가’로 골라 주세요.</div>`}`;
+}
+function pinCard(m){
+  const total=m.items.length, done=m.items.filter(i=>i.done).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const row = it => `
+    <li class="item ${it.done?'done':''} ${it.color?'c-'+it.color:''}">
+      <button class="check" data-a="toggle" data-mid="${m.id}" data-id="${it.id}" aria-label="완료 표시">${it.done?'✓':''}</button>
+      <span class="txt" data-a="toggle" data-mid="${m.id}" data-id="${it.id}">${it.emoji?`<span class="em">${esc(it.emoji)}</span>`:''}<span class="hl">${esc(it.text)}</span></span>
+    </li>`;
+  let body = '';
+  if(!collapsed[m.id]){
+    const loose = m.items.filter(i=>!i.secId || !m.groups.some(g=>g.id===i.secId));
+    body = `<ul class="items">${loose.map(row).join('')}</ul>` +
+      m.groups.map(g=>{ const its=m.items.filter(i=>i.secId===g.id); if(!its.length) return '';
+        return `<div class="pin-group">${esc(g.name)}</div><ul class="items">${its.map(row).join('')}</ul>`; }).join('') +
+      (total?'':`<p class="hint">할 일이 없어요. ✏️로 열어 추가하세요.</p>`);
+  }
+  return `
+    <div class="pin-card">
+      <div class="pin-title">
+        <h2 data-a="collapse" data-id="${m.id}" title="접기/펼치기">${collapsed[m.id]?'▸ ':''}${esc(m.title)}</h2>
+        <button class="icon" data-a="open" data-id="${m.id}" title="열어서 편집">✏️</button>
+        <button class="icon" data-a="pinMemo" data-id="${m.id}" title="고정 보드에서 빼기">✕</button>
+      </div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      ${body}
+    </div>`;
+}
+
+function renderSettings(){
+  const opts = [
+    ['light','☀️ 밝게','linear-gradient(135deg,#f6f4ef 50%,#ffffff 50%)'],
+    ['dark','🌙 어둡게','linear-gradient(135deg,#1b1a18 50%,#262421 50%)'],
+    ['auto','💻 컴퓨터 설정 따라가기','linear-gradient(135deg,#f6f4ef 50%,#1b1a18 50%)']
+  ];
+  return `
+    <div class="help">
+      <h3>⚙️ 설정 <button class="btn-text" data-a="settings">닫기 ✕</button></h3>
+      <p class="hint" style="margin:0 0 8px">화면 테마 · 메인 화면과 고정 창에 함께 적용돼요</p>
+      <div class="theme-opts">
+        ${opts.map(([v,label,bg])=>`<button class="theme-opt ${state.theme===v?'sel':''}" data-a="setTheme" data-v="${v}">
+          <span class="sw-prev" style="background:${bg}"></span>${label}</button>`).join('')}
+      </div>
+      <div class="set-sec">
+        <p class="set-label">☁️ 클라우드 저장 (Firebase)</p>
+        ${(docRef || cloud.status==='connecting') ? `
+          <div class="row"><span data-cloud-badge>${cloudLabel()}</span><span style="flex:1"></span>
+            ${CLOUD_SECRET.trim() ? '' : `<button class="btn" data-a="cloudOff">연결 끊기</button>`}</div>
+          <p class="hint">${CLOUD_SECRET.trim()
+            ? '자동 연결 · 어떤 기기·브라우저에서 열어도 같은 메모가 보여요.'
+            : `비밀 키 ${esc(maskKey(getCloudKey()))} · 이 기기에 기억돼 있어요. 같은 키를 넣은 기기끼리 메모가 함께 보여요.`}</p>` : CLOUD_SECRET.trim() ? `
+          <div class="row"><span>⚠️ 연결되지 않았어요</span><span style="flex:1"></span>
+            <button class="btn" data-a="cloudRetry">다시 연결</button></div>` : `
+          <div class="row">
+            <input class="field grow" id="cloudKey" type="password" placeholder="Firebase 규칙에 적은 비밀 키" autocomplete="off">
+            <button class="btn primary" data-a="cloudOn">연결</button>
+          </div>
+          <p class="hint">기기마다 처음 한 번만 입력하면 기억돼요. 처음 연결하면 지금 메모와 클라우드 메모가 합쳐져요.</p>`}
+        ${cloud.status==='error' ? `<p class="cloud-err">⚠️ ${esc(cloud.msg)}</p>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderHelp(){
+  return `
+    <div class="help">
+      <h3>❓ 사용법 <button class="btn-text" data-a="help">닫기 ✕</button></h3>
+      <ul>
+        <li><b>메모 만들기</b> · ‘새 메모 만들기’에서 제목과 카테고리를 정해요. ⚙️ 카테고리에서 카테고리를 추가·삭제할 수 있어요.</li>
+        <li><b>할 일 추가</b> · 메모 안에서 <b>＋ 할 일 추가</b>를 누르고 입력 후 Enter. 계속 입력하면 연달아 추가돼요.</li>
+        <li><b>묶음</b> · <b>＋ 묶음 추가</b>로 메모 안의 할 일을 주제별로 나눌 수 있어요. 묶음마다 ‘할 일 추가’가 따로 있어요.</li>
+        <li><b>완료(취소선)</b> · 할 일 글자나 동그라미를 누르면 취소선, 다시 누르면 취소.</li>
+        <li><b>중요 강조</b> · 🎨 버튼에서 형광펜 색·이모티콘을 고르거나, 입력할 때 맨 앞에 <b>!</b> 를 붙여요. 다른 묶음으로 옮기기도 여기서 해요.</li>
+        <li><b>수정·삭제</b> · 제목은 눌러서 수정, 할 일은 ✏️ / ✕ 버튼으로.</li>
+        <li><b>화면 고정</b> · 메모 카드나 메모 안의 <b>📌</b>로 고정할 메모를 고른 뒤, 위의 <b>📌 화면 고정</b>을 누르면 고른 메모들만 모인 작은 창이 다른 프로그램 위에 항상 떠 있어요 (크롬·엣지). 창 안에서 체크, 접기/펼치기, ✏️ 편집, 메모 추가·빼기를 할 수 있어요.</li>
+        <li><b>클라우드 저장</b> · ⚙️ 설정에서 비밀 키를 입력해 Firebase에 연결하면, 같은 키를 넣은 기기끼리 메모가 실시간으로 함께 보여요.</li>
+        <li><b>백업</b> · 내용은 이 브라우저에 자동 저장돼요. 목록 화면 아래의 ‘백업 내보내기’로 가끔 저장해 두세요.</li>
+      </ul>
+    </div>`;
+}
+
+function itemRow(it){
+  const cls = ['item']; if(it.done) cls.push('done'); if(it.color) cls.push('c-'+it.color);
+  const editing = ui.editItem===it.id;
+  return `
+    <li class="${cls.join(' ')}">
+      <button class="check" data-a="toggle" data-id="${it.id}" aria-label="완료 표시">${it.done?'✓':''}</button>
+      ${editing
+        ? `<input class="edit-item" id="edit-${it.id}" data-id="${it.id}" value="${esc(it.text)}">`
+        : `<span class="txt" data-a="toggle" data-id="${it.id}">${it.emoji?`<span class="em">${esc(it.emoji)}</span>`:''}<span class="hl">${esc(it.text)}</span></span>`}
+      <button class="icon ${ui.markMenu===it.id?'active':''}" data-a="mark" data-id="${it.id}" title="강조·묶음 이동">🎨</button>
+      <button class="icon" data-a="editItem" data-id="${it.id}" title="수정">✏️</button>
+      <button class="icon" data-a="delItem" data-id="${it.id}" title="삭제">✕</button>
+      ${ui.markMenu===it.id?markMenu(it):''}
+    </li>`;
+}
+
+function markMenu(it){
+  return `
+    <div class="mark-menu">
+      <p>강조 색</p>
+      <div class="row">${COLORS.map(c=>`<button class="sw ${c} ${it.color===c?'sel':''}" data-a="setColor" data-id="${it.id}" data-v="${c}" title="${COLOR_NAMES[c]}"></button>`).join('')}</div>
+      <p>이모티콘</p>
+      <div class="row">${EMOJIS.map(e=>`<button class="emo ${it.emoji===e?'sel':''}" data-a="setEmoji" data-id="${it.id}" data-v="${e}">${e}</button>`).join('')}</div>
+      ${(()=>{ const gs=curMemo().groups; if(!gs.length) return '';
+        const cur = gs.some(g=>g.id===it.secId) ? it.secId : '';
+        return `<p>묶음 이동</p><div class="row">
+          ${gs.map(g=>`<button class="mv ${cur===g.id?'sel':''}" data-a="moveTo" data-id="${it.id}" data-v="${g.id}">${esc(g.name)}</button>`).join('')}
+          <button class="mv ${cur===''?'sel':''}" data-a="moveTo" data-id="${it.id}" data-v="">묶음 없음</button></div>`; })()}
+      <button class="btn-text" data-a="clearMark" data-id="${it.id}">강조 모두 지우기</button>
+    </div>`;
+}
+
+/* ---------- 동작 ---------- */
+function toast(msg){
+  toastEl.textContent = msg; toastEl.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(()=>toastEl.classList.remove('show'), 2600);
+}
+const findItem = id => curMemo()?.items.find(i=>i.id===id);
+
+function addItem(){
+  const input = app.querySelector('#newItem'); const m = curMemo();
+  if(!input || !m) return;
+  let text = input.value.trim(); if(!text) return;
+  let color='', emoji='';
+  if(text.startsWith('!') || text.startsWith('！')){ text=text.slice(1).trim(); color='red'; }
+  if(!text) return;
+  const secId = (ui.addTo && ui.addTo!==NONE) ? ui.addTo : '';
+  m.items.push({id:uid(), text, done:false, color, emoji, secId}); touch(m); save();
+  focusSel = '#newItem'; render();
+}
+function createMemo(){
+  const t = app.querySelector('#newMemoTitle'); const c = app.querySelector('#newMemoCat');
+  const title = t.value.trim();
+  if(!title){ toast('제목을 입력해 주세요'); t.focus(); return; }
+  const m = {id:uid(), catId:c.value||null, title, items:[], groups:[], created:Date.now(), updated:Date.now()};
+  state.memos.push(m); save();
+  ui.addingMemo=false; ui.addTo=NONE; view={...view, name:'detail', memoId:m.id};
+  focusSel = '#newItem'; render();
+}
+function addCat(){
+  const n = app.querySelector('#newCatName'), e = app.querySelector('#newCatEmoji');
+  const name = n.value.trim(); if(!name){ n.focus(); return; }
+  state.categories.push({id:uid(), name, emoji:e.value.trim()||'📁'}); save();
+  focusSel = '#newCatName'; render();
+}
+/* now=true: Enter로 저장(바로 다시 그림) / false: 다른 곳을 눌러 저장(클릭 처리 후 다시 그림) */
+function commitTitle(now){
+  const el = app.querySelector('#titleEdit'); const m = curMemo();
+  if(el && m){ const v=el.value.trim(); if(v && v!==m.title){ m.title=v; touch(m); save(); } }
+  ui.editTitle=false; now ? render() : renderLater();
+}
+function commitItem(id, now){
+  const el = app.querySelector('#edit-'+id); const it = findItem(id);
+  if(el && it){
+    let v = el.value.trim();
+    // 수정할 때도 맨 앞 ! = 중요(형광펜) 표시
+    if(v.startsWith('!') || v.startsWith('！')){ v = v.slice(1).trim(); if(v && !it.color) it.color='red'; }
+    if(v){ it.text=v; touch(curMemo()); save(); }
+  }
+  ui.editItem=null; now ? render() : renderLater();
+}
+function commitGroup(id, now){
+  const el = app.querySelector('#g-edit-'+id); const m = curMemo(); const g = m?.groups.find(x=>x.id===id);
+  if(el && g){ const v=el.value.trim(); if(v){ g.name=v; touch(m); save(); } }
+  ui.editGroup=null; now ? render() : renderLater();
+}
+
+app.addEventListener('click', e=>{
+  const t = e.target.closest('[data-a]');
+  if(!t){
+    if(ui.markMenu && !e.target.closest('.mark-menu')){ ui.markMenu=null; render(); }
+    return;
+  }
+  const a = t.dataset.a, id = t.dataset.id;
+  if(a!=='delMemo' && a!=='delCat' && a!=='delGroup') ui.confirmDel=null;
+  const m = curMemo();
+  switch(a){
+    case 'pin': togglePin(); return;
+    case 'help': ui.help=!ui.help; break;
+    case 'settings': ui.settings=!ui.settings; break;
+    case 'setTheme': state.theme=t.dataset.v; save(); break;
+    case 'cloudOn': cloudOnFromInput(); return;
+    case 'cloudRetry': cloudConnect(getCloudKey()); return;
+    case 'cloudOff':
+      cloudDisconnect(); try{ localStorage.removeItem(CLOUD_KEY); }catch(e){}
+      cloud={status:'off',msg:''}; toast('연결을 끊었어요. 메모는 이 기기에 그대로 남아 있어요'); break;
+    case 'pinMemo': { const mm=memoOf(id); mm.pinned=!mm.pinned; if(mm.pinned) mm.pinnedAt=Date.now(); save();
+      if(!pipWin) toast(mm.pinned?'📌 고정 보드에 추가했어요':'고정 보드에서 뺐어요'); break; }
+    case 'collapse': collapsed[id]=!collapsed[id]; break;
+    case 'openAdd': ui.addTo=id; ui.markMenu=null; focusSel='#newItem'; break;
+    case 'addGroup': {
+      const g={id:uid(), name:'새 묶음'}; m.groups.push(g); touch(m); save();
+      ui.editGroup=g.id; ui.addTo=null; focusSel='#g-edit-'+g.id; break; }
+    case 'editGroup': ui.editGroup=id; focusSel='#g-edit-'+id; break;
+    case 'delGroup':
+      if(ui.confirmDel!==id){ ui.confirmDel=id; toast('한 번 더 누르면 묶음이 삭제돼요 (할 일은 남아요)'); break; }
+      m.groups = m.groups.filter(g=>g.id!==id);
+      m.items.forEach(i=>{ if(i.secId===id) i.secId=''; });
+      ui.confirmDel=null; touch(m); save(); break;
+    case 'moveTo': { const it=findItem(id); it.secId=t.dataset.v; ui.markMenu=null; touch(m); save(); break; }
+    case 'cat': view.cat=id; break;
+    case 'manageCats': ui.editingCats=!ui.editingCats; if(ui.editingCats) focusSel='#newCatName'; break;
+    case 'addCat': addCat(); return;
+    case 'delCat':
+      if(ui.confirmDel!==id){ ui.confirmDel=id; break; }
+      state.categories = state.categories.filter(c=>c.id!==id);
+      state.memos.forEach(mm=>{ if(mm.catId===id) mm.catId=null; });
+      if(view.cat===id) view.cat='all';
+      ui.confirmDel=null; save(); break;
+    case 'openNewMemo': ui.addingMemo=true; focusSel='#newMemoTitle'; break;
+    case 'cancelNewMemo': ui.addingMemo=false; break;
+    case 'createMemo': createMemo(); return;
+    case 'open': view.name='detail'; view.memoId=id; ui.markMenu=null; ui.editItem=null; ui.editTitle=false; ui.addTo=null; ui.editGroup=null; window.scrollTo?.(0,0); break;
+    case 'back': view.name=pipWin?'board':'home'; view.memoId=null; ui.markMenu=null; ui.editItem=null; ui.editTitle=false; ui.addTo=null; ui.editGroup=null; break;
+    case 'delMemo':
+      if(ui.confirmDel!==m.id){ ui.confirmDel=m.id; break; }
+      state.memos = state.memos.filter(x=>x.id!==m.id); ui.confirmDel=null;
+      view.name=pipWin?'board':'home'; view.memoId=null; save(); toast('메모를 삭제했어요'); break;
+    case 'editTitle': ui.editTitle=true; focusSel='#titleEdit'; break;
+    case 'toggle': { const mm = t.dataset.mid ? memoOf(t.dataset.mid) : m; const it=mm?.items.find(i=>i.id===id);
+      if(it){ it.done=!it.done; touch(mm); save(); } ui.markMenu=null; break; }
+    case 'mark': ui.markMenu = ui.markMenu===id ? null : id; break;
+    case 'setColor': { const it=findItem(id); it.color = it.color===t.dataset.v ? '' : t.dataset.v; touch(m); save(); break; }
+    case 'setEmoji': { const it=findItem(id); it.emoji = it.emoji===t.dataset.v ? '' : t.dataset.v; touch(m); save(); break; }
+    case 'clearMark': { const it=findItem(id); it.color=''; it.emoji=''; ui.markMenu=null; touch(m); save(); break; }
+    case 'editItem': ui.editItem=id; ui.markMenu=null; focusSel='#edit-'+id; break;
+    case 'delItem': m.items = m.items.filter(i=>i.id!==id); ui.markMenu=null; touch(m); save(); break;
+    case 'clearDone': { const n=m.items.filter(i=>i.done).length; m.items=m.items.filter(i=>!i.done); touch(m); save(); toast(`완료한 항목 ${n}개를 지웠어요`); break; }
+    case 'export': exportData(); return;
+    case 'import': importFile.click(); return;
+  }
+  render();
+});
+
+app.addEventListener('keydown', e=>{
+  const t = e.target;
+  if(e.key==='Enter' && t.matches('.memo-card')){ t.click(); return; }
+  if(e.key==='Escape'){
+    if(t.id==='titleEdit'){ ui.editTitle=false; render(); return; }
+    if(t.classList?.contains('edit-item')){ ui.editItem=null; render(); return; }
+    if(t.id==='newItem'){ ui.addTo=null; render(); return; }
+    if(t.classList?.contains('g-input')){ ui.editGroup=null; render(); return; }
+    if(ui.markMenu){ ui.markMenu=null; render(); return; }
+    if(ui.addingMemo){ ui.addingMemo=false; render(); return; }
+  }
+  if(e.key!=='Enter' || e.isComposing || e.keyCode===229) return; // 한글 입력 중 Enter 중복 방지
+  if(t.id==='newItem'){ e.preventDefault(); addItem(); }
+  else if(t.id==='newMemoTitle'){ e.preventDefault(); createMemo(); }
+  else if(t.id==='newCatName' || t.id==='newCatEmoji'){ e.preventDefault(); addCat(); }
+  else if(t.id==='cloudKey'){ e.preventDefault(); cloudOnFromInput(); }
+  else if(t.id==='titleEdit'){ e.preventDefault(); if(ui.editTitle) commitTitle(true); }
+  else if(t.classList.contains('edit-item')){ e.preventDefault(); if(ui.editItem===t.dataset.id) commitItem(t.dataset.id, true); }
+  else if(t.classList.contains('g-input')){ e.preventDefault(); if(ui.editGroup===t.dataset.id) commitGroup(t.dataset.id, true); }
+});
+
+app.addEventListener('focusout', e=>{
+  if(rendering) return;
+  const t = e.target;
+  if(t.id==='titleEdit' && ui.editTitle) commitTitle();
+  else if(t.classList?.contains('edit-item') && ui.editItem===t.dataset.id) commitItem(t.dataset.id);
+  else if(t.classList?.contains('g-input') && ui.editGroup===t.dataset.id) commitGroup(t.dataset.id);
+  else if(t.id==='newItem' && ui.addTo!==null && !t.value.trim()){
+    // 다른 버튼 클릭이 먼저 처리되도록 살짝 늦게 닫기
+    setTimeout(()=>{ const el=app.querySelector('#newItem'); if(ui.addTo!==null && (!el || (el!==el.ownerDocument.activeElement && !el.value.trim()))){ ui.addTo=null; render(); } }, 150);
+  }
+});
+
+app.addEventListener('change', e=>{
+  if(e.target.id==='pinAdd' && e.target.value){ const mm=memoOf(e.target.value); mm.pinned=true; mm.pinnedAt=Date.now(); save(); render(); return; }
+  if(e.target.id==='memoCat'){ const m=curMemo(); m.catId=e.target.value||null; touch(m); save(); render(); }
+});
+
+/* ---------- 백업 ---------- */
+function exportData(){
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  const d = new Date();
+  a.href = URL.createObjectURL(blob);
+  a.download = `할일메모_백업_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  toast('백업 파일을 저장했어요');
+}
+importFile.addEventListener('change', ()=>{
+  const f = importFile.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const s = JSON.parse(r.result);
+      if(!Array.isArray(s.memos) || !Array.isArray(s.categories)) throw 0;
+      state = s; save(); view={name:'home',cat:'all',memoId:null}; render(); toast('백업을 불러왔어요');
+    }catch(err){ toast('올바른 백업 파일이 아니에요'); }
+    importFile.value='';
+  };
+  r.readAsText(f);
+});
+
+/* ---------- 화면 고정 (항상 위에 떠 있는 창) ---------- */
+async function togglePin(){
+  if(pipWin){ pipWin.close(); return; }
+  if(!('documentPictureInPicture' in window)){
+    toast('이 브라우저는 화면 고정을 지원하지 않아요. 크롬 또는 엣지 최신 버전에서 열어 주세요.');
+    return;
+  }
+  // 고정한 메모가 없으면: 지금 보고 있는 메모를 고정, 아니면 안내
+  if(!state.memos.some(m=>m.pinned)){
+    const cm = view.name==='detail' && curMemo();
+    if(cm){ cm.pinned=true; cm.pinnedAt=Date.now(); save(); }
+    else if(!state.memos.length){ toast('먼저 메모를 만들어 주세요'); return; }
+    else toast('📌 고정 창에서 ‘＋ 메모 추가’로 고정할 메모를 골라 주세요');
+  }
+  try{
+    pipWin = await documentPictureInPicture.requestWindow({width:380, height:620});
+  }catch(err){ toast('고정 창을 열 수 없어요: '+(err.message||err)); pipWin=null; return; }
+  document.querySelectorAll('style, link[rel="stylesheet"]').forEach(n=>pipWin.document.head.appendChild(n.cloneNode(true)));
+  pipWin.document.title = '할 일 메모';
+  pipWin.document.body.appendChild(app);
+  document.getElementById('pinned-msg').classList.add('show');
+  prevView = {...view};
+  view = {...view, name:'board', memoId:null};
+  Object.assign(ui, {addingMemo:false, editingCats:false, markMenu:null, editItem:null, editTitle:false, addTo:null, editGroup:null, help:false, settings:false});
+  pipWin.addEventListener('pagehide', ()=>{
+    document.getElementById('host').appendChild(app);
+    document.getElementById('pinned-msg').classList.remove('show');
+    pipWin = null;
+    view = prevView || {name:'home', cat:'all', memoId:null};
+    Object.assign(ui, {markMenu:null, editItem:null, editTitle:false, addTo:null, editGroup:null});
+    render();
+  });
+  render();
+}
+document.getElementById('unpinBtn').addEventListener('click', ()=>{ if(pipWin) pipWin.close(); });
+
+/* 다른 탭/창에서 바뀐 내용 반영 */
+window.addEventListener('storage', e=>{ if(e.key===KEY){ state=load(); render(); } });
+
+/* ---------- 클라우드 저장 (Firebase Firestore) ----------
+   memoboards/{비밀 키} 문서 하나에 메모 전체를 저장해요. 테마는 기기마다 따로 저장. */
+const CLIENT_ID = uid();
+let cloud = {status:'off', msg:''};
+let fb = null, docRef = null, unsub = null, pushTimer = null, pendingRemote = null, lastPushed = '';
+
+const getCloudKey = () => { if(CLOUD_SECRET.trim()) return CLOUD_SECRET.trim();
+  try{ return localStorage.getItem(CLOUD_KEY)||''; }catch(e){ return ''; } };
+const maskKey = k => k ? k.slice(0,3) + '•'.repeat(Math.max(4, Math.min(10, k.length-3))) : '';
+const shareable = s => { const {theme, ...rest} = s; return JSON.stringify(rest); };
+
+function cloudLabel(withDot){
+  const t = {connecting:'☁️ 연결 중…', synced:'☁️ 저장됨', saving:'☁️ 저장 중…',
+             offline:'⚠️ 오프라인 · 연결되면 저장돼요', error:'⚠️ 클라우드 오류'}[cloud.status] || '';
+  return t && withDot ? '· '+t : t;
+}
+function setCloudStatus(status, msg=''){
+  cloud = {status, msg};
+  app.querySelectorAll('[data-cloud-badge]').forEach(el=>{ el.textContent = cloudLabel(el.classList.contains('cloud-badge')); });
+}
+function cloudError(err){
+  const code = err && (err.code || '');
+  let msg = (err && err.message) || String(err);
+  if(String(code).includes('permission-denied')) msg = '비밀 키가 Firebase 규칙에 적은 키와 달라요. 다시 확인해 주세요.';
+  else if(/import|fetch|module/i.test(msg)) msg = 'Firebase를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.';
+  setCloudStatus('error', msg);
+}
+
+async function loadFirebase(){
+  if(fb) return fb;
+  const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
+  const [a, f] = await Promise.all([import(base+'firebase-app.js'), import(base+'firebase-firestore.js')]);
+  const fbApp = a.initializeApp(FIREBASE_CONFIG);
+  fb = {db:f.getFirestore(fbApp), doc:f.doc, getDoc:f.getDoc, setDoc:f.setDoc, onSnapshot:f.onSnapshot};
+  return fb;
+}
+
+/* 처음 연결할 때: 이 기기 메모와 클라우드 메모를 합치기 (같은 메모는 더 최근에 고친 쪽) */
+function mergeStates(local, remote){
+  // 이 브라우저에 메모가 없으면(처음 여는 브라우저) 클라우드 내용을 그대로 사용
+  if(!local.memos.length) return {...remote, theme:local.theme};
+  // 이름이 같은 카테고리는 하나로 합치기 (브라우저마다 생긴 기본 카테고리 중복 방지)
+  const cats = [...remote.categories], remap = {};
+  local.categories.forEach(c=>{
+    const same = cats.find(x=>x.id===c.id) || cats.find(x=>x.name===c.name);
+    if(same) remap[c.id] = same.id; else cats.push(c);
+  });
+  const map = new Map(remote.memos.map(m=>[m.id, m]));
+  local.memos.forEach(m0=>{
+    const m = {...m0, catId: remap[m0.catId] ?? m0.catId};
+    const r = map.get(m.id); if(!r || (m.updated||0) > (r.updated||0)) map.set(m.id, m);
+  });
+  return {...remote, categories:cats, memos:[...map.values()], theme:local.theme};
+}
+function parseRemote(d){
+  try{ return normalize(JSON.parse(d.data)); }catch(e){ return null; }
+}
+function inputBusy(){
+  const ae = app.ownerDocument.activeElement;
+  return ae && app.contains(ae) && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName) && ae.id!=='cloudKey';
+}
+/* 다른 기기에서 바뀐 내용 반영 (입력 중이면 입력이 끝난 뒤에) */
+function applyRemote(remote){
+  if(inputBusy()){ pendingRemote = remote; return; }
+  pendingRemote = null;
+  state = {...remote, theme:state.theme};
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+  lastPushed = shareable(state);
+  if(view.memoId && !memoOf(view.memoId)){ view.name = pipWin?'board':'home'; view.memoId = null; }
+  render();
+}
+app.addEventListener('focusout', ()=>{
+  setTimeout(()=>{ if(pendingRemote && !inputBusy()) applyRemote(pendingRemote); }, 200);
+});
+
+function schedulePush(){
+  if(!docRef) return;
+  clearTimeout(pushTimer); pushTimer = setTimeout(pushNow, 500);
+}
+async function pushNow(){
+  if(!docRef) return;
+  const data = shareable(state);
+  if(data===lastPushed){ return; }
+  lastPushed = data;
+  setCloudStatus(navigator.onLine ? 'saving' : 'offline');
+  try{
+    await fb.setDoc(docRef, {data, updatedAt:Date.now(), clientId:CLIENT_ID});
+    if(lastPushed===data){ try{ localStorage.removeItem(DIRTY); }catch(e){} setCloudStatus('synced'); }
+  }catch(err){ lastPushed=''; cloudError(err); }
+}
+
+async function cloudConnect(key){
+  cloudDisconnect();
+  setCloudStatus('connecting'); render();
+  try{
+    await loadFirebase();
+    const ref = fb.doc(fb.db, 'memoboards', key);
+    const snap = await fb.getDoc(ref);
+    let first = true, dirty = false;
+    try{ first = localStorage.getItem(CLOUD_INIT)!==key; dirty = !!localStorage.getItem(DIRTY); }catch(e){}
+    const remote = snap.exists() ? parseRemote(snap.data()) : null;
+    if(remote){
+      if(first) state = mergeStates(state, remote);            // 이 기기 첫 연결: 합치기
+      else if(!dirty){ state = {...remote, theme:state.theme}; lastPushed = shareable(state); } // 평소: 클라우드가 기준
+      // dirty(이 기기에서 못 올린 변경이 있음)면 이 기기 내용을 올림
+    }
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); localStorage.setItem(CLOUD_INIT, key); }catch(e){}
+    docRef = ref;
+    if(lastPushed!==shareable(state)) await pushNow();
+    unsub = fb.onSnapshot(ref, s=>{
+      if(s.metadata.hasPendingWrites || !s.exists()) return;
+      const d = s.data(); if(d.clientId===CLIENT_ID) return;
+      const r = parseRemote(d); if(r) applyRemote(r);
+    }, err=>cloudError(err));
+    setCloudStatus(navigator.onLine ? 'synced' : 'offline');
+    render();
+    return true;
+  }catch(err){
+    docRef = null; cloudError(err); render();
+    return false;
+  }
+}
+function cloudDisconnect(){
+  if(unsub){ try{ unsub(); }catch(e){} }
+  unsub = null; docRef = null; clearTimeout(pushTimer); lastPushed=''; pendingRemote=null;
+}
+async function cloudOnFromInput(){
+  const input = app.querySelector('#cloudKey'); if(!input) return;
+  const key = input.value.trim();
+  if(key.length < 8){ toast('비밀 키를 정확히 입력해 주세요 (8자 이상)'); input.focus(); return; }
+  if(/[\/]/.test(key)){ toast('비밀 키에는 / 를 쓸 수 없어요'); return; }
+  const ok = await cloudConnect(key);
+  if(ok){ try{ localStorage.setItem(CLOUD_KEY, key); }catch(e){} toast('☁️ Firebase에 연결했어요'); render(); }
+}
+window.addEventListener('online', ()=>{ if(docRef){ lastPushed=''; schedulePush(); setCloudStatus('synced'); } });
+window.addEventListener('offline', ()=>{ if(docRef) setCloudStatus('offline'); });
+
+render();
+if(getCloudKey()) cloudConnect(getCloudKey());
+})();
+</script>
+</body>
+</html>
